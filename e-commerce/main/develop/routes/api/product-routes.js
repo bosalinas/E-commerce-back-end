@@ -4,20 +4,48 @@ const { Product, Category, Tag, ProductTag } = require('../../models');
 // The `/api/products` endpoint
 
 // get all products
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   // find all products
   // be sure to include its associated Category and Tag data
+  try {
+    const productData = await Product.findAll({
+      include: [{ model: Category, Tag }],
+    });
+    res.status(200).json(productData);
+    } catch (err) {
+      res.status(500).json(err);
+    }
 });
 
 // get one product
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   // find a single product by its `id`
   // be sure to include its associated Category and Tag data
+  try {
+    const productById = await Product.findByPk(req.params.id, {
+      include: [{ model: Category, Tag }],
+    })
+    res.status(200).json(productById);
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 // create new product
-router.post('/', (req, res) => {
-  /* req.body should look like this...
+router.post('/', async (req, res) => {
+  try {
+    const newProduct = await Product.create({
+      include: [{ model: Category, ProductTag, Tag }],
+      product_name: req.body.product_name,
+      price:  req.body.price,
+      stock:  req.body.stock,
+      tagIds:  req.body.tag_id,
+    });
+    res.status(200).json(newProduct);
+  } catch (err) {
+    res.status(400).json(err);
+  }
+   /* req.body should look like this...
     {
       product_name: "Basketball",
       price: 200.00,
@@ -25,6 +53,7 @@ router.post('/', (req, res) => {
       tagIds: [1, 2, 3, 4]
     }
   */
+
   Product.create(req.body)
     .then((product) => {
       // if there's product tags, we need to create pairings to bulk create in the ProductTag model
